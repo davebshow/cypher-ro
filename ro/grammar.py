@@ -1,6 +1,5 @@
-from pyparsing import (Word, alphanums, ZeroOrMore, nums,
-                       stringEnd, Suppress, Literal, CaselessKeyword,
-                       Optional, Forward, quotedString, removeQuotes)
+from pyparsing import (Word, alphanums, ZeroOrMore, nums, stringEnd, Suppress, Literal,
+    CaselessKeyword, Optional, Forward, quotedString)
 
 
 ############### CYPHER READ QUERY STRUCTURE ###############
@@ -75,29 +74,28 @@ keyval_csv_pattern << keyval + ZeroOrMore(comma + keyval_csv_pattern)
 # Parse comparison style syntax.
 comparison = gettr + comparison_operators + right
 
-# Comma seperated recursive pattern for WHERE style syntax
+# Comma seperated recursive pattern for comparison style syntax
 comparison_csv_pattern = Forward()
 comparison_csv_pattern << comparison + ZeroOrMore(where_opts + comparison_csv_pattern)
 
+
+############### Nodes/Edges ###############
+
 # Map style properties for nodes/edges.
-prop_open = Literal("{")
-prop_close = Literal("}")
-props = prop_open + keyval_csv_pattern + prop_close
+map_open = Literal("{")
+map_close = Literal("}")
+map = map_open + keyval_csv_pattern + map_close
 
+# Nodes
+node = paren_open + Optional(alias_label) + Optional(map) + paren_close
 
-############### Nodes ###############
-
-node = paren_open + Optional(alias_label) + Optional(props)+ paren_close
-
-
-############### Edges ###############
-
+# Edges
 edge = Literal("-")
 out_marker = Literal(">")
 in_marker = Literal("<")
 edge_open = Literal("[")
 edge_close = Literal("]")
-edge_meta = edge_open + Optional(alias_label) + Optional(props)+ edge_close
+edge_meta = edge_open + Optional(alias_label) + Optional(map)+ edge_close
 undir_edge = edge + Optional(edge_meta) + edge
 out_edge = undir_edge + out_marker
 in_edge = in_marker + undir_edge
@@ -118,6 +116,7 @@ where_stmt = where + comparison_csv_pattern
 
 ############### Aggregation ###############
 
+# Kwrds
 count = CaselessKeyword("count")
 sum = CaselessKeyword("sum")
 disc_per = CaselessKeyword("percentileDisc")

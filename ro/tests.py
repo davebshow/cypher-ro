@@ -10,7 +10,6 @@ class CypherRO(unittest.TestCase):
     def setUp(self):
         # Traversal pattern matches recursively with ZeroOrMore, therefore
         # we need string end to test in an isolated environment.
-        self.traversal_pattern = traversal_pattern + stringEnd
         self.match_stmt = match_stmt + stringEnd
         self.where_stmt = where_stmt + stringEnd
 
@@ -302,134 +301,11 @@ class CypherRO(unittest.TestCase):
             accepted = False
         self.assertFalse(accepted)
 
-    def test_traversal(self):
-        traversal_pattern = self.traversal_pattern
-        one_node = "(n:Node)"
-        try:
-            traversal_pattern.parseString(one_node)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertTrue(accepted)
-
-        labels = "(n:Person)--(m:Place)"
-        try:
-            traversal_pattern.parseString(labels)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertTrue(accepted)
-
-        full_labels = "(n:Person)-[:BORN_IN]-(m:Place)"
-        try:
-            traversal_pattern.parseString(full_labels)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertTrue(accepted)
-
-        long_full_labels = "(n:Person)-[:BORN_IN]-(m:Place)-[:LIVED_IN]-(m:Person)"
-        try:
-            traversal_pattern.parseString(long_full_labels)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertTrue(accepted)
-
-        long_full_labels_dir = "(n:Person)-[:BORN_IN]->(m:Place)<-[:LIVED_IN]-(m:Person)"
-        try:
-            traversal_pattern.parseString(long_full_labels_dir)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertTrue(accepted)
-
-        full_labels_out = "(n:Person)-[:BORN_IN]->(m:Place)"
-        try:
-            traversal_pattern.parseString(full_labels_out)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertTrue(accepted)
-
-        full_labels_in = "(n:Person)<-[:BORN_IN]-(m:Place)"
-        try:
-            traversal_pattern.parseString(full_labels_in)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertTrue(accepted)
-
-        full_attrs = "(n:Person {name: 'Dave'})-[k:LIVED_IN]-(m:Place {name: 'Iowa City'})"
-        try:
-            traversal_pattern.parseString(full_attrs)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertTrue(accepted)
-
-        bad_simple = "(n:Node)---(m)"
-        try:
-            traversal_pattern.parseString(bad_simple)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertFalse(accepted)
-
-        bad_one_node = "(n:Node"
-        try:
-            traversal_pattern.parseString(bad_one_node)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertFalse(accepted)
-
-        bad_labels = "(n:Person--(m:Place)"
-        try:
-            traversal_pattern.parseString(bad_labels)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertFalse(accepted)
-
-        bad_full_labels = "(n:Person)-:BORN_IN]-(m:Place)"
-        try:
-            traversal_pattern.parseString(bad_full_labels)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertFalse(accepted)
-
-        bad_full_labels_out = "(n:Person)<-[:BORN_IN]->(m:Place)"
-        try:
-            traversal_pattern.parseString(bad_full_labels_out)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertFalse(accepted)
-
-        bad_full_labels_in = "(n:Person)<[:BORN_IN]-(m:Place)"
-        try:
-            traversal_pattern.parseString(bad_full_labels_in)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertFalse(accepted)
-
-
-    def test_match_statement(self):
-        match = self.match_stmt
+    def test_match(self):
+        match_stmt = self.match_stmt
         one_node = "MATCH (n:Node)"
         try:
-            match.parseString(one_node)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertTrue(accepted)
-
-        simple = "MATCH (n)--(m)"
-        try:
-            match.parseString(simple)
+            match_stmt.parseString(one_node)
             accepted = True
         except ParseException:
             accepted = False
@@ -437,7 +313,7 @@ class CypherRO(unittest.TestCase):
 
         labels = "OPTIONAL MATCH (n:Person)--(m:Place)"
         try:
-            match.parseString(labels)
+            match_stmt.parseString(labels)
             accepted = True
         except ParseException:
             accepted = False
@@ -445,7 +321,7 @@ class CypherRO(unittest.TestCase):
 
         full_labels = "MATCH (n:Person)-[:BORN_IN]-(m:Place)"
         try:
-            match.parseString(full_labels)
+            match_stmt.parseString(full_labels)
             accepted = True
         except ParseException:
             accepted = False
@@ -453,7 +329,7 @@ class CypherRO(unittest.TestCase):
 
         long_full_labels = "OPTIONAL MATCH (n:Person)-[:BORN_IN]-(m:Place)-[:LIVED_IN]-(m:Person)"
         try:
-            match.parseString(long_full_labels)
+            match_stmt.parseString(long_full_labels)
             accepted = True
         except ParseException:
             accepted = False
@@ -461,39 +337,95 @@ class CypherRO(unittest.TestCase):
 
         long_full_labels_dir = "MATCH (n:Person)-[:BORN_IN]->(m:Place)<-[:LIVED_IN]-(m:Person)"
         try:
-            match.parseString(long_full_labels_dir)
+            match_stmt.parseString(long_full_labels_dir)
             accepted = True
         except ParseException:
             accepted = False
         self.assertTrue(accepted)
 
-        full_attrs = "MATCH (n:Person {name: 'Dave'})-[k:LIVED_IN]-(m:Place {name: 'Iowa City'})"
+        full_labels_out = "OPTIONAL MATCH (n:Person)-[:BORN_IN]->(m:Place)"
         try:
-            match.parseString(full_attrs)
+            match_stmt.parseString(full_labels_out)
             accepted = True
         except ParseException:
             accepted = False
         self.assertTrue(accepted)
 
-        bad_one_node = "MATC (n:Node)"
+        full_labels_in = "MATCH (n:Person)<-[:BORN_IN]-(m:Place)"
         try:
-            match.parseString(bad_one_node)
+            match_stmt.parseString(full_labels_in)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        full_attrs = "OPTIONAL MATCH (n:Person {name: 'Dave'})-[k:LIVED_IN]-(m:Place {name: 'Iowa City'})"
+        try:
+            match_stmt.parseString(full_attrs)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        bad_simple = "MATCH (n:Node)---(m)"
+        try:
+            match_stmt.parseString(bad_simple)
             accepted = True
         except ParseException:
             accepted = False
         self.assertFalse(accepted)
 
-        bad_labels = "MATCH ugly (n:Person)--(m:Place)"
+        bad_one_node = "OPTIONAL MATCH(n:Node"
         try:
-            match.parseString(bad_labels)
+            match_stmt.parseString(bad_one_node)
             accepted = True
         except ParseException:
             accepted = False
         self.assertFalse(accepted)
 
-        bad_full_labels = "MATCH (n:Person)-[:BORN_IN]-(m:Place) to much"
+        bad_labels = "MATCH (n:Person--(m:Place)"
         try:
-            match.parseString(bad_full_labels)
+            match_stmt.parseString(bad_labels)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_full_labels = "OPTIONAL MATCH (n:Person)-:BORN_IN]-(m:Place)"
+        try:
+            match_stmt.parseString(bad_full_labels)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_full_labels_out = "MATCH (n:Person)<-[:BORN_IN]->(m:Place)"
+        try:
+            match_stmt.parseString(bad_full_labels_out)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_full_labels_in = "OPTIONAL MATCH (n:Person)<[:BORN_IN]-(m:Place)"
+        try:
+            match_stmt.parseString(bad_full_labels_in)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_kwrd = "MATC (n:Person)-[:BORN_IN]->(m:Place)<-[:LIVED_IN]-(m:Person)"
+        try:
+            match_stmt.parseString(bad_kwrd)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_opt_kwrd = "OPTIONA MATCH (n:Person)-[:BORN_IN]->(m:Place)<-[:LIVED_IN]-(m:Person)"
+        try:
+            match_stmt.parseString(bad_opt_kwrd)
             accepted = True
         except ParseException:
             accepted = False
@@ -793,8 +725,6 @@ class CypherRO(unittest.TestCase):
         except ParseException:
             accepted = False
         self.assertFalse(accepted)
-
-
 
 
 if __name__ == "__main__":
