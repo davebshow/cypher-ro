@@ -45,6 +45,7 @@ flt = integer + period + integer
 comma = Literal(",")
 paren_open = Literal("(")
 paren_close = Literal(")")
+colon = Literal(":")
 
 # Operators
 equals = Literal("=")
@@ -56,22 +57,10 @@ neq = Literal("<>")
 
 comparison_operators = (equals | geq | leq | gt | lt | neq)
 
-# Build node/edge alias and label.
-seperator = Literal(":")
-label = seperator + var + Optional(White())
-alias_label = var + ZeroOrMore(label) | ZeroOrMore(label)
-
 # Left and right side of property operations.
 gettr = var + period + var
 right = gettr | quotedString | integer
 
-# Parse property dict style syntax.
-keyval = var + seperator + Optional(White()) + right
-
-# Comma seperated recursive pattern for property.
-keyval_csv_pattern = Forward()
-keyval_csv_pattern << keyval + ZeroOrMore(comma + Optinal(White()) +
-    keyval_csv_pattern)
 
 ############### Aggregation ###############
 
@@ -102,13 +91,27 @@ aggr_fn = (count_fn | sum_fn | disc_per_fn | std_dev_fn)
 
 ############### Nodes/Edges ###############
 
+# Labels for nodes/edges
+label = colon + var + Optional(White())
+alias_label = var + ZeroOrMore(label) | ZeroOrMore(label)
+
 # Map style properties for nodes/edges.
 map_open = Literal("{")
 map_close = Literal("}")
-map = map_open + keyval_csv_pattern + map_close
+
+# Parse property prop_map style syntax.
+keyval = var + colon + Optional(White()) + right
+
+# Comma seperated recursive pattern for property.
+keyval_csv_pattern = Forward()
+keyval_csv_pattern << keyval + ZeroOrMore(comma + Optional(White()) +
+    keyval_csv_pattern)
+
+# Property map
+prop_map = map_open + keyval_csv_pattern + map_close
 
 # Nodes
-node = paren_open + Optional(alias_label) + Optional(map) + paren_close
+node = paren_open + Optional(alias_label) + Optional(prop_map) + paren_close
 
 # Edges
 edge = Literal("-")
@@ -116,7 +119,7 @@ out_marker = Literal(">")
 in_marker = Literal("<")
 edge_open = Literal("[")
 edge_close = Literal("]")
-edge_meta = edge_open + Optional(alias_label) + Optional(map)+ edge_close
+edge_meta = edge_open + Optional(alias_label) + Optional(prop_map)+ edge_close
 undir_edge = edge + Optional(edge_meta) + edge
 out_edge = undir_edge + out_marker
 in_edge = in_marker + undir_edge
