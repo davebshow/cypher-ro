@@ -1,4 +1,4 @@
-from pyparsing import (Word, alphanums, ZeroOrMore,
+from pyparsing import (Word, alphanums, ZeroOrMore, nums,
                        stringEnd, Suppress, Literal, CaselessKeyword,
                        Optional, Forward, quotedString, removeQuotes)
 
@@ -33,16 +33,28 @@ distinct = CaselessKeyword("DISTINCT")
 ############### KWRD Groups ###############
 and_not = and_kwrd + not_kwrd
 or_not = or_kwrd + not_kwrd
-where_opts = and_not | or_not | and_kwrd | or_kwrd | not_kwrd
-
+where_opts = (and_not | or_not | and_kwrd | or_kwrd | not_kwrd)
 
 ############### Generics ###############
 
 # Some basic symbols.
 var = Word(alphanums, "_" + alphanums)
-equals = Literal("=")  # Need other operators for where.
-comma = Literal(",")
 period = Literal(".")
+integer = Word(nums)
+flt = integer + period + integer
+comma = Literal(",")
+paren_open = Literal("(")
+paren_close = Literal(")")
+
+# Operators
+equals = Literal("=")
+gt = Literal(">")
+geq = Literal(">=")
+lt = Literal("<")
+leq = Literal("<=")
+neq = Literal("<>")
+
+comparison_operators = (equals | geq | leq | gt | lt | neq)
 
 # Build node/edge alias and label.
 seperator = Literal(":")
@@ -50,22 +62,22 @@ label = seperator + var
 alias_label = var + Optional(label) | label
 
 # Left and right side of property operations.
-left = var +  Optional(period + var)
-right = left | quotedString
+gettr = var + period + var
+right = gettr | quotedString | integer
 
 # Parse property dict style syntax.
-keyval = left + seperator + right
+keyval = var + seperator + right
 
 # Comma seperated recursive pattern for property.
 keyval_csv_pattern = Forward()
 keyval_csv_pattern << keyval + ZeroOrMore(comma + keyval_csv_pattern)
 
-# Parse getter style syntax.
-gettr = left + equals + right
+# Parse comparison style syntax.
+comparison = gettr + comparison_operators + right
 
 # Comma seperated recursive pattern for WHERE style syntax
-gettr_csv_pattern = Forward()
-gettr_csv_pattern << gettr + ZeroOrMore(where_opts + gettr_csv_pattern)
+comparison_csv_pattern = Forward()
+comparison_csv_pattern << comparison + ZeroOrMore(where_opts + comparison_csv_pattern)
 
 # Map style properties for nodes/edges.
 prop_open = Literal("{")
@@ -75,9 +87,7 @@ props = prop_open + keyval_csv_pattern + prop_close
 
 ############### Nodes ###############
 
-node_open = Literal("(")
-node_close = Literal(")")
-node = node_open + Optional(alias_label) + Optional(props)+ node_close
+node = paren_open + Optional(alias_label) + Optional(props)+ paren_close
 
 
 ############### Edges ###############
@@ -100,7 +110,33 @@ traversal_pattern = Forward()
 traversal_pattern << node + ZeroOrMore(edge + traversal_pattern)
 
 
-############### STATEMENTS ###############
+############### MATCH/WHERE STATEMENTS ###############
 
 match_stmt = Optional(optional) + match + traversal_pattern
-where_stmt = where + gettr_csv_pattern
+where_stmt = where + comparison_csv_pattern
+
+
+############### Aggregation ###############
+
+count = CaselessKeyword("count")
+sum = CaselessKeyword("sum")
+disc_per = CaselessKeyword("percentileDisc")
+standard_dev = CaselessKeyword("stdev")
+
+# Count function
+astrx = Literal("*")
+dist_iden = (distinct + gettr) | (distinct + var)
+count_opts = dist_iden | gettr | var | astrx
+count_fn = count + paren_open + count_opts + paren_close
+
+# Sum function
+sum_fn = sum + paren_open + gettr + paren_close
+
+# Discrete percentile function
+disc_per_fn = disc_per + paren_open + gettr + comma + flt + paren_close
+
+# Standard deviation function
+std_dev_fn = standard_dev + paren_open + gettr + paren_close
+
+# Aggregates
+aggr_fn = (count_fn | sum_fn | disc_per_fn | std_dev_fn)

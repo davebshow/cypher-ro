@@ -1,7 +1,7 @@
 import unittest
 from pyparsing import ParseException, stringEnd
 from grammar import (node, edge_meta, undir_edge, edge, traversal_pattern,
-    match_stmt, where_stmt)
+    match_stmt, where_stmt, count_fn, sum_fn, disc_per_fn, std_dev_fn)
 
 
 
@@ -572,6 +572,229 @@ class CypherRO(unittest.TestCase):
         except ParseException:
             accepted = False
         self.assertFalse(accepted)
+
+    def test_count(self):
+        simple = "count(*)"
+        try:
+            count_fn.parseString(simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        alias = "count(n)"
+        try:
+            count_fn.parseString(alias)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        distinct = "count(DISTINCT n)"
+        try:
+            count_fn.parseString(distinct)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        distinct_prop = "count(DISTINCT n.name)"
+        try:
+            count_fn.parseString(distinct_prop)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        prop = "count(n.name)"
+        try:
+            count_fn.parseString(prop)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        bad_simple = "coun(name)"
+        try:
+            count_fn.parseString(bad_simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_lparen = "count name)"
+        try:
+            count_fn.parseString(bad_lparen)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_rparen = "count(name"
+        try:
+            count_fn.parseString(bad_rparen)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_quotes = "count('name')"
+        try:
+            count_fn.parseString(bad_quotes)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+    def test_sum(self):
+        simple = "sum(n.name)"
+        try:
+            sum_fn.parseString(simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        bad_simple = "su(n.name)"
+        try:
+            sum_fn.parseString(bad_simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_lparen = "sum n.name)"
+        try:
+            sum_fn.parseString(bad_lparen)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_rparen = "sum(n.name"
+        try:
+            sum_fn.parseString(bad_rparen)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_quotes = "sum('n.name')"
+        try:
+            sum_fn.parseString(bad_quotes)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+    def test_discret_percentile(self):
+        simple = "percentileDisc(n.name, 0.5)"
+        try:
+            disc_per_fn.parseString(simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        bad_simple = "percentilDisc(n.name, 0.5)"
+        try:
+            disc_per_fn.parseString(bad_simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_lparen = "percentileDisc n.name, 0.5)"
+        try:
+            disc_per_fn.parseString(bad_lparen)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_rparen = "percentileDisc(n.name, 0.5"
+        try:
+            disc_per_fn.parseString(bad_rparen)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_quotes = "percentileDisc(n.name, '0.5')"
+        try:
+            disc_per_fn.parseString(bad_quotes)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        missing_first = "percentileDisc('0.5')"
+        try:
+            disc_per_fn.parseString(missing_first)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        missing_second = "percentileDisc(n.name)"
+        try:
+            disc_per_fn.parseString(missing_second)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        missing_comma = "percentileDisc(n.name 0.5)"
+        try:
+            disc_per_fn.parseString(missing_comma)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+
+    def test_std_dev(self):
+        simple = "stdev(n.name)"
+        try:
+            std_dev_fn.parseString(simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        bad_simple = "stde(n.name)"
+        try:
+            std_dev_fn.parseString(bad_simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_lparen = "stdev n.name)"
+        try:
+            std_dev_fn.parseString(bad_lparen)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_rparen = "stdev(n.name"
+        try:
+            std_dev_fn.parseString(bad_rparen)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_quotes = "stdev('n.name')"
+        try:
+            std_dev_fn.parseString(bad_quotes)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+
 
 
 if __name__ == "__main__":
