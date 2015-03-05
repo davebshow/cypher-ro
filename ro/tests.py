@@ -1,7 +1,7 @@
 import unittest
 from pyparsing import ParseException, stringEnd
 from grammar import (node, edge_meta, undir_edge, edge, traversal_pattern,
-    match_stmt)
+    match_stmt, where_stmt)
 
 
 
@@ -12,6 +12,7 @@ class CypherRO(unittest.TestCase):
         # we need string end to test in an isolated environment.
         self.traversal_pattern = traversal_pattern + stringEnd
         self.match_stmt = match_stmt + stringEnd
+        self.where_stmt = where_stmt + stringEnd
 
     def test_node(self):
         # Legal nodes
@@ -293,7 +294,7 @@ class CypherRO(unittest.TestCase):
             accepted = False
         self.assertFalse(accepted)
 
-        bad_out_meta2 = "-:KNOWS]-"
+        bad_out_meta2 = "-:KNOWS]->"
         try:
             edge.parseString(bad_out_meta2)
             accepted = True
@@ -306,14 +307,6 @@ class CypherRO(unittest.TestCase):
         one_node = "(n:Node)"
         try:
             traversal_pattern.parseString(one_node)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertTrue(accepted)
-
-        simple = "(n)--(m)"
-        try:
-            traversal_pattern.parseString(simple)
             accepted = True
         except ParseException:
             accepted = False
@@ -362,14 +355,6 @@ class CypherRO(unittest.TestCase):
         full_labels_in = "(n:Person)<-[:BORN_IN]-(m:Place)"
         try:
             traversal_pattern.parseString(full_labels_in)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertTrue(accepted)
-
-        attrs = "(n:Person {name: 'Dave'})-[k:BORN_IN]-(m:Place)"
-        try:
-            traversal_pattern.parseString(attrs)
             accepted = True
         except ParseException:
             accepted = False
@@ -431,21 +416,6 @@ class CypherRO(unittest.TestCase):
             accepted = False
         self.assertFalse(accepted)
 
-        bad_attrs = "(n:Person {name: 'Dave')-[k:BORN_IN]-(m:Place)"
-        try:
-            traversal_pattern.parseString(bad_attrs)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertFalse(accepted)
-
-        bad_full_attrs = "(n:Person {name: Dave'})-[k:LIVED_IN]-(m:Place {name: 'Iowa City'})"
-        try:
-            traversal_pattern.parseString(bad_full_attrs)
-            accepted = True
-        except ParseException:
-            accepted = False
-        self.assertFalse(accepted)
 
     def test_match_statement(self):
         match = self.match_stmt
@@ -465,7 +435,7 @@ class CypherRO(unittest.TestCase):
             accepted = False
         self.assertTrue(accepted)
 
-        labels = "MATCH (n:Person)--(m:Place)"
+        labels = "OPTIONAL MATCH (n:Person)--(m:Place)"
         try:
             match.parseString(labels)
             accepted = True
@@ -473,7 +443,7 @@ class CypherRO(unittest.TestCase):
             accepted = False
         self.assertTrue(accepted)
 
-        full_labels = "OPTIONAL MATCH (n:Person)-[:BORN_IN]-(m:Place)"
+        full_labels = "MATCH (n:Person)-[:BORN_IN]-(m:Place)"
         try:
             match.parseString(full_labels)
             accepted = True
@@ -481,7 +451,7 @@ class CypherRO(unittest.TestCase):
             accepted = False
         self.assertTrue(accepted)
 
-        long_full_labels = "MATCH (n:Person)-[:BORN_IN]-(m:Place)-[:LIVED_IN]-(m:Person)"
+        long_full_labels = "OPTIONAL MATCH (n:Person)-[:BORN_IN]-(m:Place)-[:LIVED_IN]-(m:Person)"
         try:
             match.parseString(long_full_labels)
             accepted = True
@@ -524,6 +494,80 @@ class CypherRO(unittest.TestCase):
         bad_full_labels = "MATCH (n:Person)-[:BORN_IN]-(m:Place) to much"
         try:
             match.parseString(bad_full_labels)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+    def test_where(self):
+        where_stmt = self.where_stmt
+        simple = "WHERE n.name = 'David'"
+        try:
+            where_stmt.parseString(simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        where_and = "WHERE n.name = 'David' AND n.age=34"
+        try:
+            where_stmt.parseString(where_and)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        where_or = "WHERE n.name = 'David' OR n.age=34"
+        try:
+            where_stmt.parseString(where_or)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        where_and_not = "WHERE n.name = 'David' AND NOT n.age=34"
+        try:
+            where_stmt.parseString(simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        where_or_not = "WHERE n.name = 'David' OR NOT n.age=34"
+        try:
+            where_stmt.parseString(simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        bad_simple = "WHER n.name = 'David'"
+        try:
+            where_stmt.parseString(bad_simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_op = "WHERE n.name  'David'"
+        try:
+            where_stmt.parseString(bad_op)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_quote = "WHERE n.name = David'"
+        try:
+            where_stmt.parseString(bad_quote)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_op = "WHERE n.name = 'David' OR AND n.age=10"
+        try:
+            where_stmt.parseString(bad_op)
             accepted = True
         except ParseException:
             accepted = False
