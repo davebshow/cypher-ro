@@ -1,5 +1,5 @@
 from pyparsing import (Word, alphanums, ZeroOrMore, nums, stringEnd, Suppress, Literal,
-    CaselessKeyword, Optional, Forward, quotedString)
+    CaselessKeyword, Optional, Forward, quotedString, White)
 
 
 ############### CYPHER READ QUERY STRUCTURE ###############
@@ -13,23 +13,24 @@ from pyparsing import (Word, alphanums, ZeroOrMore, nums, stringEnd, Suppress, L
 
 ############### KWRDS ###############
 
-match = CaselessKeyword("MATCH")
-optional = CaselessKeyword("OPTIONAL")
-where = CaselessKeyword("WHERE")
-order_by = CaselessKeyword("ORDER BY")
-skip = CaselessKeyword("SKIP")
-limit = CaselessKeyword("LIMIT")
-with_kwrd = CaselessKeyword("WITH")
-as_kwrd = CaselessKeyword("AS")
-and_kwrd = CaselessKeyword("AND")
-or_kwrd = CaselessKeyword("OR")
-not_kwrd = CaselessKeyword("NOT")
-return_kwrd = CaselessKeyword("RETURN")
-distinct = CaselessKeyword("DISTINCT")
+match = CaselessKeyword("MATCH") + White()
+optional = CaselessKeyword("OPTIONAL") + White()
+where = CaselessKeyword("WHERE") + White()
+order_by = CaselessKeyword("ORDER BY") + White()
+skip = CaselessKeyword("SKIP") + White()
+limit = CaselessKeyword("LIMIT") + White()
+with_kwrd = CaselessKeyword("WITH") + White()
+as_kwrd = CaselessKeyword("AS") + White()
+and_kwrd = CaselessKeyword("AND") + White()
+or_kwrd = CaselessKeyword("OR") + White()
+not_kwrd = CaselessKeyword("NOT") + White()
+return_kwrd = CaselessKeyword("RETURN") + White()
+distinct = CaselessKeyword("DISTINCT") + White()
 # ...there are a bunch of functions and reserved kwds to add.
 
 
 ############### KWRD Groups ###############
+
 and_not = and_kwrd + not_kwrd
 or_not = or_kwrd + not_kwrd
 where_opts = (and_not | or_not | and_kwrd | or_kwrd | not_kwrd)
@@ -57,26 +58,46 @@ comparison_operators = (equals | geq | leq | gt | lt | neq)
 
 # Build node/edge alias and label.
 seperator = Literal(":")
-label = seperator + var
-alias_label = var + Optional(label) | label
+label = seperator + var + Optional(White())
+alias_label = var + ZeroOrMore(label) | ZeroOrMore(label)
 
 # Left and right side of property operations.
 gettr = var + period + var
 right = gettr | quotedString | integer
 
 # Parse property dict style syntax.
-keyval = var + seperator + right
+keyval = var + seperator + Optional(White()) + right
 
 # Comma seperated recursive pattern for property.
 keyval_csv_pattern = Forward()
-keyval_csv_pattern << keyval + ZeroOrMore(comma + keyval_csv_pattern)
+keyval_csv_pattern << keyval + ZeroOrMore(comma + Optinal(White()) +
+    keyval_csv_pattern)
 
-# Parse comparison style syntax.
-comparison = gettr + comparison_operators + right
+############### Aggregation ###############
 
-# Comma seperated recursive pattern for comparison style syntax
-comparison_csv_pattern = Forward()
-comparison_csv_pattern << comparison + ZeroOrMore(where_opts + comparison_csv_pattern)
+# Kwrds
+count = CaselessKeyword("count")
+sum = CaselessKeyword("sum")
+disc_per = CaselessKeyword("percentileDisc")
+standard_dev = CaselessKeyword("stdev")
+
+# Count function
+astrx = Literal("*")
+dist_iden = (distinct + gettr) | (distinct + var)
+count_opts = dist_iden | gettr | var | astrx
+count_fn = count + paren_open + count_opts + paren_close
+
+# Sum function
+sum_fn = sum + paren_open + gettr + paren_close
+
+# Discrete percentile function
+disc_per_fn = disc_per + paren_open + gettr + comma + flt + paren_close
+
+# Standard deviation function
+std_dev_fn = standard_dev + paren_open + gettr + paren_close
+
+# Aggregates
+aggr_fn = (count_fn | sum_fn | disc_per_fn | std_dev_fn)
 
 
 ############### Nodes/Edges ###############
@@ -107,35 +128,21 @@ edge = (out_edge | in_edge | undir_edge)
 traversal_pattern = Forward()
 traversal_pattern << node + ZeroOrMore(edge + traversal_pattern)
 
+traversal_csv_pattern = Forward()
+traversal_csv_pattern << traversal_pattern + ZeroOrMore(comma +
+    traversal_csv_pattern)
+
+############### WHERE pattern ###############
+
+comparison = gettr + comparison_operators + right | traversal_pattern
+
+# Comma seperated recursive pattern for comparison style syntax
+comparison_pattern = Forward()
+comparison_pattern << comparison + ZeroOrMore(White() + where_opts +
+    comparison_pattern)
+
 
 ############### MATCH/WHERE STATEMENTS ###############
 
-match_stmt = Optional(optional) + match + traversal_pattern
-where_stmt = where + comparison_csv_pattern
-
-
-############### Aggregation ###############
-
-# Kwrds
-count = CaselessKeyword("count")
-sum = CaselessKeyword("sum")
-disc_per = CaselessKeyword("percentileDisc")
-standard_dev = CaselessKeyword("stdev")
-
-# Count function
-astrx = Literal("*")
-dist_iden = (distinct + gettr) | (distinct + var)
-count_opts = dist_iden | gettr | var | astrx
-count_fn = count + paren_open + count_opts + paren_close
-
-# Sum function
-sum_fn = sum + paren_open + gettr + paren_close
-
-# Discrete percentile function
-disc_per_fn = disc_per + paren_open + gettr + comma + flt + paren_close
-
-# Standard deviation function
-std_dev_fn = standard_dev + paren_open + gettr + paren_close
-
-# Aggregates
-aggr_fn = (count_fn | sum_fn | disc_per_fn | std_dev_fn)
+match_stmt = Optional(optional) + match + traversal_csv_pattern
+where_stmt = where + comparison_pattern

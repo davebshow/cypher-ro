@@ -39,9 +39,33 @@ class CypherRO(unittest.TestCase):
             accepted = False
         self.assertTrue(accepted)
 
+        multi_label = "(p:Person:Place)"
+        try:
+            node.parseString(multi_label)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        simple_multi_label = "(:Person:Place)"
+        try:
+            node.parseString(simple_multi_label)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
         props = "(p {name: 'dave'})"
         try:
             node.parseString(props)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        multi_label_props = "(p:Person:Place {name: 'dave'})"
+        try:
+            node.parseString(multi_label_props)
             accepted = True
         except ParseException:
             accepted = False
@@ -67,6 +91,14 @@ class CypherRO(unittest.TestCase):
         bad_alias = "(p"
         try:
             node.parseString(bad_alias)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_multi_label = "(p:Person Place)"
+        try:
+            node.parseString(bad_multi_label)
             accepted = True
         except ParseException:
             accepted = False
@@ -122,9 +154,33 @@ class CypherRO(unittest.TestCase):
             accepted = False
         self.assertTrue(accepted)
 
+        multi_label = "[k:KNOWS:WORKS_WITH]"
+        try:
+            edge_meta.parseString(multi_label)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        simple_multi_label = "[:KNOWS:WORKS_WITH]"
+        try:
+            edge_meta.parseString(simple_multi_label)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
         props = "[k {from: 'school'}]"
         try:
             edge_meta.parseString(props)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        simple_multi_label_props = "[:KNOWS:WORKS_WITH {how_long: 10}]"
+        try:
+            edge_meta.parseString(simple_multi_label_props)
             accepted = True
         except ParseException:
             accepted = False
@@ -150,6 +206,14 @@ class CypherRO(unittest.TestCase):
         bad_alias = "[k"
         try:
             edge_meta.parseString(bad_alias)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_simple_multi_label = "[:KNOWS WORKS_WITH]"
+        try:
+            edge_meta.parseString(bad_simple_multi_label)
             accepted = True
         except ParseException:
             accepted = False
@@ -319,6 +383,14 @@ class CypherRO(unittest.TestCase):
             accepted = False
         self.assertTrue(accepted)
 
+        multiple = "MATCH (n:Person)-[:LIVED_IN]-(m:Place), (j:Job)"
+        try:
+            match_stmt.parseString(labels)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
         full_labels = "MATCH (n:Person)-[:BORN_IN]-(m:Place)"
         try:
             match_stmt.parseString(full_labels)
@@ -378,6 +450,14 @@ class CypherRO(unittest.TestCase):
         bad_one_node = "OPTIONAL MATCH(n:Node"
         try:
             match_stmt.parseString(bad_one_node)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_multiple = "MATCH (n:Person)-[:LIVED_IN]-(m:Place) (j:Job)"
+        try:
+            match_stmt.parseString(bad_multiple)
             accepted = True
         except ParseException:
             accepted = False
@@ -449,6 +529,14 @@ class CypherRO(unittest.TestCase):
             accepted = False
         self.assertTrue(accepted)
 
+        where_path = "WHERE n.name = 'David' AND (n)-->(m)"
+        try:
+            where_stmt.parseString(where_and)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
         where_or = "WHERE n.name = 'David' OR n.age=34"
         try:
             where_stmt.parseString(where_or)
@@ -476,6 +564,14 @@ class CypherRO(unittest.TestCase):
         bad_simple = "WHER n.name = 'David'"
         try:
             where_stmt.parseString(bad_simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_where_path = "WHERE n.name = 'David' AND (n)->(m)"
+        try:
+            where_stmt.parseString(bad_where_path)
             accepted = True
         except ParseException:
             accepted = False
