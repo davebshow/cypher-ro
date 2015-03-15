@@ -2,7 +2,7 @@ import unittest
 from pyparsing import ParseException, stringEnd
 from grammar import (node, edge_content, undir_edge, edge, traversal_pattern,
     match_stmt, where_stmt, count_fn, sum_fn, disc_per_fn, std_dev_fn,
-    with_stmt)
+    with_stmt, order_stmt, limit_stmt, skip_stmt, return_stmt)
 
 
 
@@ -11,9 +11,14 @@ class CypherRO(unittest.TestCase):
     def setUp(self):
         # Traversal pattern matches recursively with ZeroOrMore, therefore
         # we need string end to test in an isolated environment.
+        self.edge_content = edge_content + stringEnd
         self.match_stmt = match_stmt + stringEnd
         self.where_stmt = where_stmt + stringEnd
         self.with_stmt = with_stmt + stringEnd
+        self.order_stmt = order_stmt + stringEnd
+        self.limit_stmt = limit_stmt + stringEnd
+        self.skip_stmt = skip_stmt + stringEnd
+        self.return_stmt = return_stmt + stringEnd
 
     def test_node(self):
         # Legal nodes
@@ -131,7 +136,7 @@ class CypherRO(unittest.TestCase):
         self.assertFalse(accepted)
 
     def test_edge_meta(self):
-        # Legal edge meta
+        edge_content = self.edge_content
         empty = "[]"
         try:
             edge_content.parseString(empty)
@@ -149,6 +154,22 @@ class CypherRO(unittest.TestCase):
         self.assertTrue(accepted)
 
         label = "[k:KNOWS]"
+        try:
+            edge_content.parseString(label)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        card = "[*]"
+        try:
+            edge_content.parseString(label)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        label_card = "[k:KNOWS*1..5]"
         try:
             edge_content.parseString(label)
             accepted = True
@@ -386,6 +407,14 @@ class CypherRO(unittest.TestCase):
         self.assertTrue(accepted)
 
         multiple = "MATCH (n:Person)-[:LIVED_IN]-(m:Place), (j:Job)"
+        try:
+            match_stmt.parseString(labels)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        match_path = "MATCH path = (n)-->(m)"
         try:
             match_stmt.parseString(labels)
             accepted = True
@@ -1039,6 +1068,314 @@ class CypherRO(unittest.TestCase):
         try:
             with_stmt.parseString(count)
             accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+    def test_orderby(self):
+        order_stmt = self.order_stmt
+        simple = "ORDER BY n"
+        try:
+            order_stmt.parseString(simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        simple_asc = "ORDER BY n ASC"
+        try:
+            order_stmt.parseString(simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        simple_desc = "ORDER BY n DESC"
+        try:
+            order_stmt.parseString(simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        multiple_simple = "ORDER BY n, m "
+        try:
+            order_stmt.parseString(multiple_simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        multiple_simple_asc_desc = "ORDER BY n ASC, m DESC"
+        try:
+            order_stmt.parseString(multiple_simple_asc_desc)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        simple_attr = "ORDER BY n.name"
+        try:
+            order_stmt.parseString(simple_attr)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        simple_asc_attr = "ORDER BY n.name ASC"
+        try:
+            order_stmt.parseString(simple_asc_attr)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        simple_desc_attr = "ORDER BY n.name DESC"
+        try:
+            order_stmt.parseString(simple_desc_attr)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        multiple_attr = "ORDER BY n.name, m.name "
+        try:
+            order_stmt.parseString(multiple_attr)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        multiple_attr_asc_desc = "ORDER BY n.name asc, m.name desc"
+        try:
+            order_stmt.parseString(multiple_attr_asc_desc)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        bad_multiple_attr = "ORDER BY n.name m.name "
+        try:
+            order_stmt.parseString(bad_multiple_attr)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_multiple_attr_asc_desc = "ORDER BY n.name asc m.name desc"
+        try:
+            order_stmt.parseString(bad_multiple_attr_asc_desc)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_simple = "ORDER B n"
+        try:
+            order_stmt.parseString(bad_simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+    def test_limit(self):
+        limit_stmt = self.limit_stmt
+        simple = "LIMIT 3"
+        try:
+            limit_stmt.parseString(simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        bad_simple = "LIMIT '3'"
+        try:
+            limit_stmt.parseString(bad_simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_multiple = "LIMIT 3,4"
+        try:
+            limit_stmt.parseString(bad_multiple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+    def test_skip(self):
+        skip_stmt = self.skip_stmt
+        simple = "SKIP 3"
+        try:
+            skip_stmt.parseString(simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        bad_simple = "SKIP '3'"
+        try:
+            skip_stmt.parseString(bad_simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_multiple = "SKIP 3,4"
+        try:
+            skip_stmt.parseString(bad_multiple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+    def test_return(self):
+        return_stmt = self.return_stmt
+        simple = "RETURN n"
+        try:
+            return_stmt.parseString(simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        simple_literal = "RETURN 'yolo'"
+        try:
+            return_stmt.parseString(simple_literal)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        simple_pattern = "RETURN (m)-->(n)"
+        try:
+            return_stmt.parseString(simple_pattern)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        simple_comp = "RETURN n > 30"
+        try:
+            return_stmt.parseString(simple_comp)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        simple_as = "RETURN n as Name"
+        try:
+            return_stmt.parseString(simple_comp)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        simple_attr_as = "RETURN n.name as Name"
+        try:
+            return_stmt.parseString(simple_comp)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        compound_comp = "RETURN n > 30 and m ='dave'"
+        try:
+            return_stmt.parseString(compound_comp)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        multi_compound_comp = "RETURN (n > 30 and m ='dave') or not m > 10"
+        try:
+            return_stmt.parseString(multi_compound_comp)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        long_return = "RETURN (n>30 AND m='dave') OR NOT g<100, (m)-->(n), 30, 5.5, 'literal', m, n.name AS Name"
+        try:
+            parsed = return_stmt.parseString(long_return)
+            accepted = True
+            q = ''.join(parsed.asList())
+            self.assertEqual(q, long_return)
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        bad_simple = "RETUR n"
+        try:
+            return_stmt.parseString(bad_simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_simple_literal = "RETURN yolo'"
+        try:
+            return_stmt.parseString(bad_simple_literal)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_simple_pattern = "RETURN m)-->(n)"
+        try:
+            return_stmt.parseString(bad_simple_pattern)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_simple_comp = "RETURN n  30"
+        try:
+            return_stmt.parseString(bad_simple_comp)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_simple_as = "RETURN n Name"
+        try:
+            return_stmt.parseString(bad_simple_comp)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_simple_attr_as = "RETURN n.name as "
+        try:
+            return_stmt.parseString(bad_simple_comp)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_compound_comp = "RETURN n > 30 m ='dave'"
+        try:
+            return_stmt.parseString(bad_compound_comp)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_multi_compound_comp = "RETURN (n > 30 and m ='dave') or not > 10"
+        try:
+            return_stmt.parseString(bad_multi_compound_comp)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_long_return = "RETURN (n>30 AND m='dave') OR NOT g<100 (m)-->(n), 30, 5.5, 'literal', m, n.name AS Name"
+        try:
+            parsed = return_stmt.parseString(bad_long_return)
+            accepted = True
+            q = ''.join(parsed.asList())
+            self.assertEqual(q, long_return)
         except ParseException:
             accepted = False
         self.assertFalse(accepted)
