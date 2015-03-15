@@ -547,7 +547,7 @@ class CypherRO(unittest.TestCase):
 
         where_and_not = "WHERE n.name = 'David' AND NOT n.age=34"
         try:
-            where_stmt.parseString(simple)
+            where_stmt.parseString(where_and_not)
             accepted = True
         except ParseException:
             accepted = False
@@ -555,7 +555,71 @@ class CypherRO(unittest.TestCase):
 
         where_or_not = "WHERE n.name = 'David' OR NOT n.age=34"
         try:
-            where_stmt.parseString(simple)
+            where_stmt.parseString(where_or_not)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        where_or_not = "WHERE n:Name"
+        try:
+            where_stmt.parseString(where_or_not)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        where_coll = "WHERE n.name IN ['david', 'javi']"
+        try:
+            where_stmt.parseString(where_coll)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        where_or_not = "WHERE has (n.name)"
+        try:
+            where_stmt.parseString(where_or_not)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        where_not = "WHERE NOT (persons)-->(peter)"
+        try:
+            where_stmt.parseString(where_not)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        where_reg = "WHERE n.name =~ 'asdf'"
+        try:
+            where_stmt.parseString(where_reg)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        where_type = "WHERE type(r) = 'person'"
+        try:
+            where_stmt.parseString(where_type)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        where_isnull = "WHERE n.prop IS NULL"
+        try:
+            where_stmt.parseString(where_isnull)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        multi_where = "WHERE n.name = 'Peter' OR (n.age < 30 AND n.name = 'Tobias') OR NOT (n.name = 'Tobias' OR n.name='Peter')"
+        try:
+            where_stmt.parseString(multi_where)
             accepted = True
         except ParseException:
             accepted = False
@@ -569,9 +633,41 @@ class CypherRO(unittest.TestCase):
             accepted = False
         self.assertFalse(accepted)
 
+        bad_where_or_not = "WHERE has n.name)"
+        try:
+            where_stmt.parseString(bad_where_or_not)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_where_reg = "WHERE n.name =~ 30"
+        try:
+            where_stmt.parseString(bad_where_reg)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_where_isnull = "WHERE IS NULL"
+        try:
+            where_stmt.parseString(bad_where_isnull)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
         bad_where_path = "WHERE n.name = 'David' AND (n)->(m)"
         try:
             where_stmt.parseString(bad_where_path)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_multi_where = "WHERE n.name = 'Peter' (OR n.age < 30 AND n.name = 'Tobias') OR NOT (n.name = 'Tobias' OR n.name='Peter')"
+        try:
+            where_stmt.parseString(bad_multi_where)
             accepted = True
         except ParseException:
             accepted = False
