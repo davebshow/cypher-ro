@@ -1,7 +1,8 @@
 import unittest
 from pyparsing import ParseException, stringEnd
-from grammar import (node, edge_meta, undir_edge, edge, traversal_pattern,
-    match_stmt, where_stmt, count_fn, sum_fn, disc_per_fn, std_dev_fn)
+from grammar import (node, edge_content, undir_edge, edge, traversal_pattern,
+    match_stmt, where_stmt, count_fn, sum_fn, disc_per_fn, std_dev_fn,
+    with_stmt)
 
 
 
@@ -12,6 +13,7 @@ class CypherRO(unittest.TestCase):
         # we need string end to test in an isolated environment.
         self.match_stmt = match_stmt + stringEnd
         self.where_stmt = where_stmt + stringEnd
+        self.with_stmt = with_stmt + stringEnd
 
     def test_node(self):
         # Legal nodes
@@ -132,7 +134,7 @@ class CypherRO(unittest.TestCase):
         # Legal edge meta
         empty = "[]"
         try:
-            edge_meta.parseString(empty)
+            edge_content.parseString(empty)
             accepted = True
         except ParseException:
             accepted = False
@@ -140,7 +142,7 @@ class CypherRO(unittest.TestCase):
 
         alias = "[k]"
         try:
-            edge_meta.parseString(alias)
+            edge_content.parseString(alias)
             accepted = True
         except ParseException:
             accepted = False
@@ -148,7 +150,7 @@ class CypherRO(unittest.TestCase):
 
         label = "[k:KNOWS]"
         try:
-            edge_meta.parseString(label)
+            edge_content.parseString(label)
             accepted = True
         except ParseException:
             accepted = False
@@ -156,7 +158,7 @@ class CypherRO(unittest.TestCase):
 
         multi_label = "[k:KNOWS:WORKS_WITH]"
         try:
-            edge_meta.parseString(multi_label)
+            edge_content.parseString(multi_label)
             accepted = True
         except ParseException:
             accepted = False
@@ -164,7 +166,7 @@ class CypherRO(unittest.TestCase):
 
         simple_multi_label = "[:KNOWS:WORKS_WITH]"
         try:
-            edge_meta.parseString(simple_multi_label)
+            edge_content.parseString(simple_multi_label)
             accepted = True
         except ParseException:
             accepted = False
@@ -172,7 +174,7 @@ class CypherRO(unittest.TestCase):
 
         props = "[k {from: 'school'}]"
         try:
-            edge_meta.parseString(props)
+            edge_content.parseString(props)
             accepted = True
         except ParseException:
             accepted = False
@@ -180,7 +182,7 @@ class CypherRO(unittest.TestCase):
 
         simple_multi_label_props = "[:KNOWS:WORKS_WITH {how_long: 10}]"
         try:
-            edge_meta.parseString(simple_multi_label_props)
+            edge_content.parseString(simple_multi_label_props)
             accepted = True
         except ParseException:
             accepted = False
@@ -188,7 +190,7 @@ class CypherRO(unittest.TestCase):
 
         multi_props = "[k {from: 'school', how_long: 10}]"
         try:
-            edge_meta.parseString(multi_props)
+            edge_content.parseString(multi_props)
             accepted = True
         except ParseException:
             accepted = False
@@ -196,7 +198,7 @@ class CypherRO(unittest.TestCase):
 
         label_props = "[k:KNOWS {from: 'school', how_long: 10}]"
         try:
-            edge_meta.parseString(label_props)
+            edge_content.parseString(label_props)
             accepted = True
         except ParseException:
             accepted = False
@@ -205,7 +207,7 @@ class CypherRO(unittest.TestCase):
         # Illegal edge meta
         bad_alias = "[k"
         try:
-            edge_meta.parseString(bad_alias)
+            edge_content.parseString(bad_alias)
             accepted = True
         except ParseException:
             accepted = False
@@ -213,7 +215,7 @@ class CypherRO(unittest.TestCase):
 
         bad_simple_multi_label = "[:KNOWS WORKS_WITH]"
         try:
-            edge_meta.parseString(bad_simple_multi_label)
+            edge_content.parseString(bad_simple_multi_label)
             accepted = True
         except ParseException:
             accepted = False
@@ -221,7 +223,7 @@ class CypherRO(unittest.TestCase):
 
         bad_props = "[k {from: 'school }]"
         try:
-            edge_meta.parseString(bad_props)
+            edge_content.parseString(bad_props)
             accepted = True
         except ParseException:
             accepted = False
@@ -229,7 +231,7 @@ class CypherRO(unittest.TestCase):
 
         bad_multi_props = "[k {from: 'school' how_long: 10}]"
         try:
-            edge_meta.parseString(bad_multi_props)
+            edge_content.parseString(bad_multi_props)
             accepted = True
         except ParseException:
             accepted = False
@@ -237,7 +239,7 @@ class CypherRO(unittest.TestCase):
 
         bad_label_props = "[k:KNOWS {from: 'school', how_long: 10]"
         try:
-            edge_meta.parseString(bad_label_props)
+            edge_content.parseString(bad_label_props)
             accepted = True
         except ParseException:
             accepted = False
@@ -913,6 +915,129 @@ class CypherRO(unittest.TestCase):
         bad_quotes = "stdev('n.name')"
         try:
             std_dev_fn.parseString(bad_quotes)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+
+    def test_with(self):
+        with_stmt = self.with_stmt
+        simple = "WITH n"
+        try:
+            with_stmt.parseString(simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        simple_patt = "WITH n, m"
+        try:
+            with_stmt.parseString(simple_patt)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        simple_as = "WITH n AS Something"
+        try:
+            with_stmt.parseString(simple_as)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        simple_mix = "WITH n AS Something, c"
+        try:
+            with_stmt.parseString(simple_mix)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        two_as = "WITH n AS Something, c AS Col"
+        try:
+            with_stmt.parseString(two_as)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        gettrs = "WITH n.name AS Something, c.some AS Col"
+        try:
+            with_stmt.parseString(gettrs)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        tp = "WITH type(n) AS Type"
+        try:
+            with_stmt.parseString(tp)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        count = "WITH count(n) AS Num"
+        try:
+            with_stmt.parseString(count)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertTrue(accepted)
+
+        bad_simple = "WITHn"
+        try:
+            with_stmt.parseString(bad_simple)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_simple_patt = "WITH n m"
+        try:
+            with_stmt.parseString(bad_simple_patt)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_simple_as = "WITH AS Something"
+        try:
+            with_stmt.parseString(bad_simple_as)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_simple_mix = "WITH n AS Something c"
+        try:
+            with_stmt.parseString(bad_simple_mix)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_two_as = "WITH n AS Something, c Col"
+        try:
+            with_stmt.parseString(bad_two_as)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        bad_tp = "WITH type(n) Type"
+        try:
+            with_stmt.parseString(bad_tp)
+            accepted = True
+        except ParseException:
+            accepted = False
+        self.assertFalse(accepted)
+
+        count = "WITH count(n AS Num"
+        try:
+            with_stmt.parseString(count)
             accepted = True
         except ParseException:
             accepted = False
