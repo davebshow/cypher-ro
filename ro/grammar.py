@@ -151,7 +151,7 @@ lst = "[" + right + ZeroOrMore("," + Optional(White()) + right) + "]"
 ############### Nodes/Edges #################################################
 
 # Labels for nodes/edges
-label = ":" + var + Optional(White())
+label = ":" + var
 alias_label = var + ZeroOrMore(label) | ZeroOrMore(label)
 
 # Parse property prop_map style syntax.
@@ -166,12 +166,12 @@ keyval_csv_pattern << keyval + ZeroOrMore("," + Optional(White()) +
 prop_map = "{" + keyval_csv_pattern + "}"
 
 # Nodes
-node = "(" + Optional(alias_label) + Optional(prop_map) + ")"
+node = "(" + Optional(alias_label) + Optional(White()) + Optional(prop_map) + ")"
 
 # Edges
 cardinality = "*" + integer + ".." + integer | "*"
-edge_content = ("[" + Optional(alias_label) + Optional(prop_map) +
-    Optional(cardinality) + "]")
+edge_content = ("[" + Optional(alias_label) + Optional(White()) +
+    Optional(prop_map) + Optional(cardinality) + "]")
 undir_edge = "-" + Optional(edge_content) + "-"
 out_edge = undir_edge + ">"
 in_edge = "<" + undir_edge
